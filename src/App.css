@@ -457,3 +457,276 @@ body {
     height: 250px;
   }
 }
+
+/* 認証画面 */
+.auth-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background-color: #F5F5F5;
+}
+
+.auth-card {
+  background-color: #FFFFFF;
+  padding: 40px;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  max-width: 400px;
+  width: 100%;
+}
+
+.auth-card h2 {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #333;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.auth-switch {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: #4CAF50;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 0.9rem;
+}
+
+.link-button:hover {
+  color: #45a049;
+}
+
+.error-message {
+  background-color: #FFEBEE;
+  color: #C62828;
+  padding: 10px;
+  border-radius: 5px;
+  font-size: 0.9rem;
+}
+
+.success-message {
+  background-color: #E8F5E9;
+  color: #2E7D32;
+  padding: 10px;
+  border-radius: 5px;
+  font-size: 0.9rem;
+}
+
+/* ログアウトボタン */
+.logout-button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background-color: #F5F5F5;
+  color: #666;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.logout-button:hover {
+  background-color: #E0E0E0;
+}
+
+/* グループ管理 */
+.group-manager {
+  background-color: #FFFFFF;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.group-manager h2 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.user-groups {
+  margin-bottom: 30px;
+}
+
+.user-groups h3 {
+  margin-bottom: 15px;
+  color: #666;
+}
+
+.group-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.group-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  background-color: #F5F5F5;
+  border-radius: 8px;
+}
+
+.group-info h4 {
+  margin: 0 0 5px 0;
+  color: #333;
+}
+
+.group-info p {
+  margin: 0 0 5px 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.invite-code {
+  font-size: 0.8rem;
+  color: #4CAF50;
+  font-weight: bold;
+}
+
+.tab-container {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.tab {
+  flex: 1;
+  padding: 10px;
+  border: 2px solid #DDDDDD;
+  background-color: #F5F5F5;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.tab.active {
+  background-color: #4CAF50;
+  color: white;
+  border-color: #4CAF50;
+}
+
+.group-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.group-form textarea {
+  width: 100%;
+  padding: 10px;
+  font-size: 1rem;
+  border: 2px solid #DDDDDD;
+  border-radius: 8px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.group-form textarea:focus {
+  outline: none;
+  border-color: #4CAF50;
+}
+
+/* グループランキング */
+.group-ranking {
+  background-color: #FFFFFF;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.group-ranking h3 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.no-group {
+  text-align: center;
+  padding: 40px;
+  color: #999;
+}
+
+.ranking-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ranking-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+  background-color: #F5F5F5;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+.ranking-item.current-user {
+  background-color: #E8F5E9;
+  border: 2px solid #4CAF50;
+}
+
+.rank {
+  font-size: 1.2rem;
+  font-weight: bold;
+  min-width: 40px;
+  text-align: center;
+}
+
+.member-info {
+  flex: 1;
+}
+
+.nickname {
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.stats {
+  display: flex;
+  gap: 15px;
+  font-size: 0.9rem;
+}
+
+.stats .level {
+  color: #666;
+}
+
+.stats .points {
+  color: #4CAF50;
+  font-weight: bold;
+}
+
+.group-invite-info {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #F5F5F5;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.group-invite-info strong {
+  color: #4CAF50;
+  font-size: 1.2rem;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: #999;
+}

@@ -17,6 +17,13 @@ const Navigation = ({ activeTab, onTabChange }) => {
         <span className="nav-icon">⚖️</span>
         <span className="nav-label">体重</span>
       </button>
+      <button
+        className={`nav-tab ${activeTab === 'group' ? 'active' : ''}`}
+        onClick={() => onTabChange('group')}
+      >
+        <span className="nav-icon">👥</span>
+        <span className="nav-label">グループ</span>
+      </button>
     </nav>
   );
 };

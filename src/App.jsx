@@ -3,7 +3,16 @@ import BingoCard from './components/BingoCard';
 import WeightPage from './components/WeightPage';
 import Navigation from './components/Navigation';
 import ExerciseModal from './components/ExerciseModal';
+import Auth from './components/Auth';
+import GroupManager from './components/GroupManager';
+import GroupRanking from './components/GroupRanking';
 import { exercises, calculateTargetValue } from './data/exercises';
+import { useAuth } from './contexts/AuthContext';
+import { 
+  getUserProgress, 
+  saveUserProgress, 
+  updatePoints 
+} from './firebase/firestore';
 import './App.css';
 
 // LocalStorageのキー
@@ -57,6 +66,7 @@ const saveToLocalStorage = (data) => {
 };
 
 function App() {
+  const { currentUser, logout } = useAuth();
   const [level, setLevel] = useState(1);
   const [cardLayout, setCardLayout] = useState([]);
   const [completedCells, setCompletedCells] = useState(Array(9).fill(false));
@@ -64,30 +74,72 @@ function App() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState(null);
   const [selectedIndex, setSelectedIndex] = useState(null);
+  const [selectedGroup, setSelectedGroup] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // 初回読み込み時にLocalStorageから復元
+  // 初回読み込み時にデータを復元
   useEffect(() => {
-    const savedData = loadFromLocalStorage();
-    if (savedData) {
-      setLevel(savedData.level || 1);
-      setCardLayout(savedData.cardLayout || generateCardLayout());
-      setCompletedCells(savedData.completedCells || Array(9).fill(false));
-    } else {
-      // 初回起動時は新しいカードを生成
-      setCardLayout(generateCardLayout());
-    }
-  }, []);
+    const loadData = async () => {
+      if (!currentUser) {
+        setLoading(false);
+        return;
+      }
 
-  // データが変更されたらLocalStorageに保存
+      try {
+        // Firestoreからデータを取得
+        const progressData = await getUserProgress(currentUser.uid);
+        
+        if (progressData.bingoCard) {
+          setCardLayout(progressData.bingoCard);
+          setCompletedCells(progressData.completedCells || Array(9).fill(false));
+          setLevel(progressData.level || 1);
+        } else {
+          // LocalStorageからデータを移行
+          const localData = loadFromLocalStorage();
+          if (localData) {
+            setLevel(localData.level || 1);
+            setCardLayout(localData.cardLayout || generateCardLayout());
+            setCompletedCells(localData.completedCells || Array(9).fill(false));
+            
+            // Firestoreに保存
+            await saveUserProgress(currentUser.uid, {
+              level: localData.level || 1,
+              bingoCard: localData.cardLayout || generateCardLayout(),
+              completedCells: localData.completedCells || Array(9).fill(false)
+            });
+          } else {
+            // 新規データ
+            const newLayout = generateCardLayout();
+            setCardLayout(newLayout);
+            await saveUserProgress(currentUser.uid, {
+              level: 1,
+              bingoCard: newLayout,
+              completedCells: Array(9).fill(false)
+            });
+          }
+        }
+      } catch (error) {
+        console.error('データ読み込みエラー:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [currentUser]);
+
+  // データが変更されたらFirestoreに保存
   useEffect(() => {
-    if (cardLayout.length > 0) {
-      saveToLocalStorage({
+    if (currentUser && cardLayout.length > 0 && !loading) {
+      saveUserProgress(currentUser.uid, {
         level,
-        cardLayout,
+        bingoCard: cardLayout,
         completedCells
+      }).catch(error => {
+        console.error('データ保存エラー:', error);
       });
     }
-  }, [level, cardLayout, completedCells]);
+  }, [level, cardLayout, completedCells, currentUser, loading]);
 
   // セルをクリックしたときの処理
   const handleCellToggle = (index) => {
@@ -98,14 +150,23 @@ function App() {
   };
 
   // エクササイズ完了時の処理
-  const handleExerciseComplete = (actualValue, isCompleted) => {
-    if (selectedIndex !== null) {
+  const handleExerciseComplete = async (actualValue, isCompleted) => {
+    if (selectedIndex !== null && currentUser) {
       const newCompletedCells = [...completedCells];
+      const wasCompleted = completedCells[selectedIndex];
       newCompletedCells[selectedIndex] = isCompleted;
       setCompletedCells(newCompletedCells);
 
+      // ポイント更新（初回完了時のみ）
+      if (isCompleted && !wasCompleted) {
+        await updatePoints(currentUser.uid, 1 * level, level);
+      }
+
       // ビンゴ判定
       if (checkBingo(newCompletedCells)) {
+        // ビンゴポイント
+        await updatePoints(currentUser.uid, 10 * level, level);
+        
         setTimeout(() => {
           alert('ビンゴ！');
           // レベルアップと新しいカード生成
@@ -117,6 +178,24 @@ function App() {
     }
   };
 
+  // 未認証の場合
+  if (!currentUser) {
+    return (
+      <div className="app">
+        <Auth onAuthSuccess={() => window.location.reload()} />
+      </div>
+    );
+  }
+
+  // ローディング中
+  if (loading) {
+    return (
+      <div className="app">
+        <div className="loading">読み込み中...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="app">
       <header className="app-header">
@@ -126,10 +205,13 @@ function App() {
             レベル {level}
           </div>
         )}
+        <button onClick={logout} className="logout-button">
+          ログアウト
+        </button>
       </header>
       
       <main className="app-main">
-        {activeTab === 'bingo' ? (
+        {activeTab === 'bingo' && (
           cardLayout.length > 0 && (
             <BingoCard
               cardLayout={cardLayout}
@@ -138,8 +220,13 @@ function App() {
               onCellToggle={handleCellToggle}
             />
           )
-        ) : (
-          <WeightPage />
+        )}
+        {activeTab === 'weight' && <WeightPage />}
+        {activeTab === 'group' && (
+          <>
+            <GroupManager onGroupSelect={setSelectedGroup} />
+            <GroupRanking group={selectedGroup} />
+          </>
         )}
       </main>
 
