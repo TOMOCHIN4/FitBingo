@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import BingoCard from './components/BingoCard';
-import { exercises } from './data/exercises';
+import WeightPage from './components/WeightPage';
+import Navigation from './components/Navigation';
+import ExerciseModal from './components/ExerciseModal';
+import { exercises, calculateTargetValue } from './data/exercises';
 import './App.css';
 
 // LocalStorageのキー
@@ -57,6 +60,10 @@ function App() {
   const [level, setLevel] = useState(1);
   const [cardLayout, setCardLayout] = useState([]);
   const [completedCells, setCompletedCells] = useState(Array(9).fill(false));
+  const [activeTab, setActiveTab] = useState('bingo');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedExercise, setSelectedExercise] = useState(null);
+  const [selectedIndex, setSelectedIndex] = useState(null);
 
   // 初回読み込み時にLocalStorageから復元
   useEffect(() => {
@@ -84,19 +91,29 @@ function App() {
 
   // セルをクリックしたときの処理
   const handleCellToggle = (index) => {
-    const newCompletedCells = [...completedCells];
-    newCompletedCells[index] = !newCompletedCells[index];
-    setCompletedCells(newCompletedCells);
+    const exercise = cardLayout[index];
+    setSelectedExercise(exercise);
+    setSelectedIndex(index);
+    setModalOpen(true);
+  };
 
-    // ビンゴ判定
-    if (checkBingo(newCompletedCells)) {
-      setTimeout(() => {
-        alert('ビンゴ！');
-        // レベルアップと新しいカード生成
-        setLevel(prevLevel => prevLevel + 1);
-        setCardLayout(generateCardLayout());
-        setCompletedCells(Array(9).fill(false));
-      }, 100);
+  // エクササイズ完了時の処理
+  const handleExerciseComplete = (actualValue, isCompleted) => {
+    if (selectedIndex !== null) {
+      const newCompletedCells = [...completedCells];
+      newCompletedCells[selectedIndex] = isCompleted;
+      setCompletedCells(newCompletedCells);
+
+      // ビンゴ判定
+      if (checkBingo(newCompletedCells)) {
+        setTimeout(() => {
+          alert('ビンゴ！');
+          // レベルアップと新しいカード生成
+          setLevel(prevLevel => prevLevel + 1);
+          setCardLayout(generateCardLayout());
+          setCompletedCells(Array(9).fill(false));
+        }, 100);
+      }
     }
   };
 
@@ -104,21 +121,39 @@ function App() {
     <div className="app">
       <header className="app-header">
         <h1>FitBingo</h1>
-        <div className="level-display">
-          レベル {level}
-        </div>
+        {activeTab === 'bingo' && (
+          <div className="level-display">
+            レベル {level}
+          </div>
+        )}
       </header>
       
       <main className="app-main">
-        {cardLayout.length > 0 && (
-          <BingoCard
-            cardLayout={cardLayout}
-            completedCells={completedCells}
-            level={level}
-            onCellToggle={handleCellToggle}
-          />
+        {activeTab === 'bingo' ? (
+          cardLayout.length > 0 && (
+            <BingoCard
+              cardLayout={cardLayout}
+              completedCells={completedCells}
+              level={level}
+              onCellToggle={handleCellToggle}
+            />
+          )
+        ) : (
+          <WeightPage />
         )}
       </main>
+
+      <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
+
+      {selectedExercise && (
+        <ExerciseModal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          exercise={selectedExercise}
+          targetValue={calculateTargetValue(selectedExercise.baseValue, level)}
+          onComplete={handleExerciseComplete}
+        />
+      )}
     </div>
   );
 }
