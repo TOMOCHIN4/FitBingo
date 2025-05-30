@@ -1,0 +1,154 @@
+/* リセット＆基本スタイル */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  background-color: #F5F5F5;
+  color: #333;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* メインコンテナ */
+.app {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ヘッダー */
+.app-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.app-header h1 {
+  font-size: 2.5rem;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.level-display {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #4CAF50;
+  background-color: #FFFFFF;
+  padding: 10px 20px;
+  border-radius: 20px;
+  display: inline-block;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* メインコンテンツ */
+.app-main {
+  flex: 1;
+}
+
+/* ビンゴカード */
+.bingo-card {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 10px;
+  background-color: #FFFFFF;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* エクササイズセル */
+.exercise-cell {
+  aspect-ratio: 1;
+  border: 2px solid #DDDDDD;
+  border-radius: 8px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color: #FFFFFF;
+  position: relative;
+  overflow: hidden;
+}
+
+.exercise-cell:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.exercise-cell:active {
+  transform: translateY(0);
+}
+
+/* 完了状態 */
+.exercise-cell.completed {
+  background-color: #4CAF50;
+  border-color: #4CAF50;
+  color: white;
+}
+
+.exercise-cell.completed::after {
+  content: '✓';
+  position: absolute;
+  top: 5px;
+  right: 10px;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+/* エクササイズ名 */
+.exercise-name {
+  font-size: 0.9rem;
+  font-weight: bold;
+  margin-bottom: 8px;
+  text-align: center;
+  line-height: 1.2;
+}
+
+/* 目標値 */
+.exercise-target {
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+/* レスポンシブデザイン */
+@media (max-width: 480px) {
+  .app {
+    padding: 15px;
+  }
+
+  .app-header h1 {
+    font-size: 2rem;
+  }
+
+  .bingo-card {
+    gap: 8px;
+    padding: 15px;
+  }
+
+  .exercise-cell {
+    padding: 10px;
+  }
+
+  .exercise-name {
+    font-size: 0.8rem;
+  }
+
+  .exercise-target {
+    font-size: 1rem;
+  }
+}
