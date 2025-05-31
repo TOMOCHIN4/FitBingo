@@ -1,0 +1,71 @@
+/* モード選択コンポーネント */
+.mode-selector {
+  display: flex;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.mode-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem;
+  border: 2px solid #ddd;
+  border-radius: 12px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 120px;
+  font-family: inherit;
+}
+
+.mode-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border-color: #ff6b6b;
+}
+
+.mode-button.active {
+  background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
+  color: white;
+  border-color: #ff6b6b;
+  box-shadow: 0 6px 20px rgba(255, 107, 107, 0.3);
+}
+
+.mode-button.active:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(255, 107, 107, 0.4);
+}
+
+.mode-icon {
+  font-size: 2rem;
+  display: block;
+}
+
+.mode-text {
+  font-size: 1rem;
+  font-weight: 600;
+  display: block;
+}
+
+/* モバイル対応 */
+@media (max-width: 768px) {
+  .mode-selector {
+    gap: 0.5rem;
+    margin: 0.5rem 0;
+  }
+  
+  .mode-button {
+    padding: 0.8rem 1rem;
+    min-width: 100px;
+  }
+  
+  .mode-icon {
+    font-size: 1.5rem;
+  }
+  
+  .mode-text {
+    font-size: 0.9rem;
+  }
+}

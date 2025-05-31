@@ -1,0 +1,112 @@
+/* 一人モード用ポイント表示 */
+.solo-points-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  color: white;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.solo-points-display.loading {
+  flex-direction: row;
+  gap: 0.5rem;
+  padding: 0.8rem 1rem;
+  background: #f0f0f0;
+  color: #666;
+}
+
+.solo-score-main {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.score-icon {
+  font-size: 1.5rem;
+  animation: score-pulse 2s ease-in-out infinite;
+}
+
+@keyframes score-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.score-value {
+  font-size: 1.8rem;
+  font-weight: 900;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+.score-label {
+  font-size: 1rem;
+  opacity: 0.9;
+}
+
+.solo-stats {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.6rem;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  font-size: 0.9rem;
+  backdrop-filter: blur(10px);
+}
+
+.stat-icon {
+  font-size: 1rem;
+}
+
+.stat-value {
+  font-weight: 600;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* ホバーエフェクト */
+.solo-points-display:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  transition: all 0.3s ease;
+}
+
+/* モバイル対応 */
+@media (max-width: 768px) {
+  .solo-points-display {
+    padding: 0.8rem;
+    gap: 0.4rem;
+  }
+  
+  .solo-score-main {
+    font-size: 1rem;
+  }
+  
+  .score-value {
+    font-size: 1.5rem;
+  }
+  
+  .solo-stats {
+    gap: 0.8rem;
+  }
+  
+  .stat-item {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.8rem;
+  }
+}

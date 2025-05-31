@@ -3,10 +3,11 @@ import BingoCard from './components/BingoCard';
 import WeightPage from './components/WeightPage';
 import Navigation from './components/Navigation';
 import Auth from './components/Auth';
-import GroupManager from './components/GroupManager';
-import GroupRanking from './components/GroupRanking';
-import BattleView from './components/BattleView';
+import TournamentList from './components/TournamentList';
+import WinnersDisplay from './components/WinnersDisplay';
 import PointsDisplay from './components/PointsDisplay';
+import SoloPointsDisplay from './components/SoloPointsDisplay';
+import ModeSelector from './components/ModeSelector';
 import BingoCelebration from './components/BingoCelebration';
 import { exercises } from './data/exercises';
 import { useAuth } from './contexts/AuthContext';
@@ -14,10 +15,9 @@ import {
   getUserProgress, 
   saveUserProgress 
 } from './firebase/firestore';
-import { 
-  addPoints, 
-  checkAdminRole
-} from './firebase/battleSystem';
+import { checkAdminRole } from './firebase/battleSystem';
+import { addSoloPoints } from './firebase/soloMode';
+import { addTournamentPoints } from './firebase/tournamentSystem';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from './firebase/config';
 import AdminDashboard from './components/AdminDashboard';
@@ -66,13 +66,13 @@ function App() {
   const [cardLayout, setCardLayout] = useState([]);
   const [completedCells, setCompletedCells] = useState(Array(9).fill(false));
   const [activeTab, setActiveTab] = useState('bingo');
-  const [selectedGroup, setSelectedGroup] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [currentBattleId, setCurrentBattleId] = useState(null);
+  const [currentTournamentId, setCurrentTournamentId] = useState(null);
   const [linesClearedInCard, setLinesClearedInCard] = useState([]);
   const [showCelebration, setShowCelebration] = useState(false);
   const [celebrationType, setCelebrationType] = useState('line');
+  const [gameMode, setGameMode] = useState('solo'); // 'solo' または 'tournament'
 
   // 初回読み込み時にデータを復元
   useEffect(() => {
@@ -86,22 +86,6 @@ function App() {
         // 管理者権限チェック
         const adminStatus = await checkAdminRole(currentUser.uid);
         setIsAdmin(adminStatus);
-        
-        // アクティブなバトルを取得
-        try {
-          const battlesQuery = query(
-            collection(db, 'battles'),
-            where('status', '==', 'active'),
-            where('participants', 'array-contains', currentUser.uid)
-          );
-          const snapshot = await getDocs(battlesQuery);
-          
-          if (!snapshot.empty) {
-            setCurrentBattleId(snapshot.docs[0].id);
-          }
-        } catch (error) {
-          console.error('バトル取得エラー:', error);
-        }
         // Firestoreからデータを取得
         const progressData = await getUserProgress(currentUser.uid);
         
@@ -170,9 +154,13 @@ function App() {
     newCompletedCells[index] = true;
     setCompletedCells(newCompletedCells);
 
-    // マス完了ポイント（バトル中のみ）
-    if (currentBattleId) {
-      await addPoints(currentUser.uid, 'exercise', { level }, currentBattleId);
+    // ポイント追加処理
+    if (gameMode === 'solo') {
+      // 一人モードの場合
+      await addSoloPoints(currentUser.uid, 'exercise', { level });
+    } else if (gameMode === 'tournament' && currentTournamentId) {
+      // 大会モードかつ大会中の場合
+      await addTournamentPoints(currentTournamentId, currentUser.uid, 'exercise', { level });
     }
     
     // ライン完成チェック
@@ -180,10 +168,16 @@ function App() {
     const newLines = completedLines.filter(line => !linesClearedInCard.includes(line));
     
     if (newLines.length > 0) {
-      // 新しいライン完成ポイント（バトル中のみ）
-      if (currentBattleId) {
+      // ライン完成ポイント追加
+      if (gameMode === 'solo') {
+        // 一人モードの場合
         for (let i = 0; i < newLines.length; i++) {
-          await addPoints(currentUser.uid, 'line', { level }, currentBattleId);
+          await addSoloPoints(currentUser.uid, 'line', { level });
+        }
+      } else if (gameMode === 'tournament' && currentTournamentId) {
+        // 大会モードかつ大会中の場合
+        for (let i = 0; i < newLines.length; i++) {
+          await addTournamentPoints(currentTournamentId, currentUser.uid, 'line', { level });
         }
       }
       setLinesClearedInCard([...linesClearedInCard, ...newLines]);
@@ -196,9 +190,13 @@ function App() {
     
     // 全マスクリアチェック
     if (newCompletedCells.every(cell => cell)) {
-      // 全マスクリアポイント（バトル中のみ）
-      if (currentBattleId) {
-        await addPoints(currentUser.uid, 'allClear', { level }, currentBattleId);
+      // 全マスクリアポイント追加
+      if (gameMode === 'solo') {
+        // 一人モードの場合
+        await addSoloPoints(currentUser.uid, 'allClear', { level });
+      } else if (gameMode === 'tournament' && currentTournamentId) {
+        // 大会モードかつ大会中の場合
+        await addTournamentPoints(currentTournamentId, currentUser.uid, 'allClear', { level });
       }
       
       // ALL CLEAR祝福アニメーション表示
@@ -259,14 +257,24 @@ function App() {
         </div>
         
         {activeTab === 'bingo' && (
-          <div className="header-stats">
-            <div className="level-display">
-              <span className="level-emoji">⭐</span>
-              <span className="level-text">LEVEL</span>
-              <span className="level-number">{level}</span>
+          <>
+            <ModeSelector 
+              currentMode={gameMode} 
+              onModeChange={setGameMode} 
+            />
+            <div className="header-stats">
+              <div className="level-display">
+                <span className="level-emoji">⭐</span>
+                <span className="level-text">LEVEL</span>
+                <span className="level-number">{level}</span>
+              </div>
+              {gameMode === 'solo' ? (
+                <SoloPointsDisplay userId={currentUser?.uid} />
+              ) : (
+                <PointsDisplay userId={currentUser?.uid} battleId={currentTournamentId} />
+              )}
             </div>
-            <PointsDisplay userId={currentUser?.uid} battleId={currentBattleId} />
-          </div>
+          </>
         )}
       </header>
       
@@ -282,12 +290,24 @@ function App() {
           )
         )}
         {activeTab === 'weight' && <WeightPage />}
-        {activeTab === 'group' && (
+        {activeTab === 'tournament' && gameMode === 'tournament' && (
           <>
-            <BattleView />
-            <GroupManager onGroupSelect={setSelectedGroup} />
-            <GroupRanking group={selectedGroup} />
+            <TournamentList onTournamentSelected={setCurrentTournamentId} />
+            <WinnersDisplay />
           </>
+        )}
+        {activeTab === 'tournament' && gameMode === 'solo' && (
+          <div className="solo-mode-message">
+            <h2>🎯 一人モード</h2>
+            <p>大会機能を利用するには「大会モード」に切り替えてください。</p>
+            <button 
+              className="switch-mode-button"
+              onClick={() => setGameMode('tournament')}
+            >
+              大会モードに切り替える
+            </button>
+            <WinnersDisplay />
+          </div>
         )}
         {activeTab === 'admin' && isAdmin && <AdminDashboard />}
       </main>

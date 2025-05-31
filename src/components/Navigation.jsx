@@ -18,11 +18,11 @@ const Navigation = ({ activeTab, onTabChange, isAdmin }) => {
         <span className="nav-label">体重</span>
       </button>
       <button
-        className={`nav-tab ${activeTab === 'group' ? 'active' : ''}`}
-        onClick={() => onTabChange('group')}
+        className={`nav-tab ${activeTab === 'tournament' ? 'active' : ''}`}
+        onClick={() => onTabChange('tournament')}
       >
-        <span className="nav-icon">👥</span>
-        <span className="nav-label">グループ</span>
+        <span className="nav-icon">🏆</span>
+        <span className="nav-label">大会</span>
       </button>
       {isAdmin && (
         <button
