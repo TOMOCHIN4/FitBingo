@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { checkAdminRole, createBattle, performWeeklyAward, finalizeBattle } from '../firebase/battleSystem';
 import { collection, query, getDocs, orderBy } from 'firebase/firestore';
 import { db } from '../firebase/config';
+import VideoManager from './VideoManager';
 
 const AdminDashboard = () => {
   const { currentUser } = useAuth();
@@ -10,6 +11,7 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [battles, setBattles] = useState([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [activeTab, setActiveTab] = useState('battles');
   
   // バトル作成フォームの状態
   const [battleName, setBattleName] = useState('');
@@ -119,6 +121,24 @@ const AdminDashboard = () => {
   return (
     <div className="admin-dashboard">
       <h2>管理者ダッシュボード</h2>
+      
+      <div className="admin-tabs">
+        <button 
+          className={`admin-tab ${activeTab === 'battles' ? 'active' : ''}`}
+          onClick={() => setActiveTab('battles')}
+        >
+          ⚔️ バトル管理
+        </button>
+        <button 
+          className={`admin-tab ${activeTab === 'videos' ? 'active' : ''}`}
+          onClick={() => setActiveTab('videos')}
+        >
+          🎥 動画管理
+        </button>
+      </div>
+
+      {activeTab === 'battles' && (
+        <>
 
       <div className="admin-section">
         <h3>バトル管理</h3>
@@ -247,16 +267,22 @@ const AdminDashboard = () => {
         )}
       </div>
 
-      <div className="admin-section">
-        <h3>管理者機能</h3>
-        <p>今後実装予定:</p>
-        <ul>
-          <li>ユーザー管理（管理者権限の付与・剥奪）</li>
-          <li>グループ管理（削除・編集）</li>
-          <li>統計情報の表示</li>
-          <li>通知の一括送信</li>
-        </ul>
-      </div>
+          <div className="admin-section">
+            <h3>管理者機能</h3>
+            <p>今後実装予定:</p>
+            <ul>
+              <li>ユーザー管理（管理者権限の付与・剥奪）</li>
+              <li>グループ管理（削除・編集）</li>
+              <li>統計情報の表示</li>
+              <li>通知の一括送信</li>
+            </ul>
+          </div>
+        </>
+      )}
+
+      {activeTab === 'videos' && (
+        <VideoManager />
+      )}
     </div>
   );
 };

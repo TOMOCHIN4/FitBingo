@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import BingoCard from './components/BingoCard';
 import WeightPage from './components/WeightPage';
 import Navigation from './components/Navigation';
-import Auth from './components/Auth';
+import AuthEnhanced from './components/AuthEnhanced';
 import TournamentList from './components/TournamentList';
 import WinnersDisplay from './components/WinnersDisplay';
 import PointsDisplay from './components/PointsDisplay';
@@ -230,11 +230,7 @@ function App() {
 
   // 未認証の場合
   if (!currentUser) {
-    return (
-      <div className="app">
-        <Auth onAuthSuccess={() => window.location.reload()} />
-      </div>
-    );
+    return <AuthEnhanced onAuthSuccess={() => window.location.reload()} />;
   }
 
   // ローディング中

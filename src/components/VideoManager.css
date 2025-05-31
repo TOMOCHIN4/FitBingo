@@ -1,0 +1,270 @@
+/* 動画管理コンポーネント */
+.video-manager {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.video-manager-loading {
+  text-align: center;
+  padding: 3rem;
+  color: #666;
+}
+
+.video-manager-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.video-manager-header h2 {
+  margin: 0;
+  color: #333;
+}
+
+.add-video-button {
+  background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
+  color: white;
+  border: none;
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.add-video-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
+}
+
+/* フォーム */
+.video-form {
+  background: #f8f9fa;
+  padding: 2rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.video-form h3 {
+  margin: 0 0 1.5rem 0;
+  color: #333;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 0.8rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #ff6b6b;
+  box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+}
+
+.form-group small {
+  display: block;
+  margin-top: 0.3rem;
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.form-actions button {
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.form-actions button[type="button"] {
+  background: #e0e0e0;
+  color: #666;
+}
+
+.form-actions button[type="button"]:hover {
+  background: #d0d0d0;
+}
+
+.form-actions button[type="submit"] {
+  background: linear-gradient(135deg, #4ecdc4, #44a08d);
+  color: white;
+}
+
+.form-actions button[type="submit"]:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(78, 205, 196, 0.3);
+}
+
+/* 動画一覧 */
+.video-list h3 {
+  margin: 0 0 1.5rem 0;
+  color: #333;
+}
+
+.no-videos {
+  text-align: center;
+  padding: 3rem;
+  color: #666;
+  background: #f8f9fa;
+  border-radius: 12px;
+}
+
+.video-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 2rem;
+}
+
+.video-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.video-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.video-thumbnail {
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  background: #f0f0f0;
+}
+
+.video-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.video-info {
+  padding: 1.5rem;
+}
+
+.video-info h4 {
+  margin: 0 0 0.8rem 0;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.video-meta {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.8rem;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.video-description {
+  color: #666;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+.video-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.video-actions button,
+.video-actions a {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.video-actions button {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.video-actions button:hover {
+  background: #bbdefb;
+}
+
+.video-actions .delete-button {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.video-actions .delete-button:hover {
+  background: #ffcdd2;
+}
+
+.video-actions .view-button {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.video-actions .view-button:hover {
+  background: #c8e6c9;
+}
+
+/* モバイル対応 */
+@media (max-width: 768px) {
+  .video-manager {
+    padding: 1rem;
+  }
+  
+  .video-manager-header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .video-form {
+    padding: 1.5rem;
+  }
+  
+  .video-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .form-actions button {
+    width: 100%;
+  }
+}
