@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { format, startOfDay } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import { useAuth } from '../contexts/AuthContext';
+import { updateWeightAndCalculatePoints } from '../firebase/battleSystem';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../firebase/config';
 
 const WEIGHT_STORAGE_KEY = 'fitbingo_weights';
 
@@ -25,15 +29,39 @@ const saveWeights = (weights) => {
 };
 
 const WeightRecord = () => {
+  const { currentUser } = useAuth();
   const [weights, setWeights] = useState([]);
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [weight, setWeight] = useState('');
+  const [currentBattleId, setCurrentBattleId] = useState(null);
 
   useEffect(() => {
     setWeights(loadWeights());
-  }, []);
+    
+    // アクティブなバトルを取得
+    const findActiveBattle = async () => {
+      if (!currentUser) return;
+      
+      try {
+        const battlesQuery = query(
+          collection(db, 'battles'),
+          where('status', '==', 'active'),
+          where('participants', 'array-contains', currentUser.uid)
+        );
+        const snapshot = await getDocs(battlesQuery);
+        
+        if (!snapshot.empty) {
+          setCurrentBattleId(snapshot.docs[0].id);
+        }
+      } catch (error) {
+        console.error('バトル取得エラー:', error);
+      }
+    };
+    
+    findActiveBattle();
+  }, [currentUser]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!weight || parseFloat(weight) <= 0) return;
@@ -61,8 +89,28 @@ const WeightRecord = () => {
 
     setWeights(updatedWeights);
     saveWeights(updatedWeights);
+    
+    // バトルポイント計算
+    let battlePoints = 0;
+    if (currentBattleId && currentUser) {
+      try {
+        battlePoints = await updateWeightAndCalculatePoints(
+          currentUser.uid,
+          currentBattleId,
+          parseFloat(weight)
+        );
+      } catch (error) {
+        console.error('バトルポイント計算エラー:', error);
+      }
+    }
+    
     setWeight('');
-    alert('体重を記録しました！');
+    
+    if (battlePoints > 0) {
+      alert(`体重を記録しました！\n${battlePoints}ポイント獲得！`);
+    } else {
+      alert('体重を記録しました！');
+    }
     
     // カスタムイベントを発火（同一タブ内の更新用）
     window.dispatchEvent(new Event('weightUpdated'));

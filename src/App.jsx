@@ -6,6 +6,7 @@ import ExerciseModal from './components/ExerciseModal';
 import Auth from './components/Auth';
 import GroupManager from './components/GroupManager';
 import GroupRanking from './components/GroupRanking';
+import BattleView from './components/BattleView';
 import { exercises, calculateTargetValue } from './data/exercises';
 import { useAuth } from './contexts/AuthContext';
 import { 
@@ -13,6 +14,12 @@ import {
   saveUserProgress, 
   updatePoints 
 } from './firebase/firestore';
+import { 
+  addPoints, 
+  checkAdminRole,
+  updateWeightAndCalculatePoints 
+} from './firebase/battleSystem';
+import AdminDashboard from './components/AdminDashboard';
 import './App.css';
 
 // LocalStorageのキー
@@ -76,6 +83,9 @@ function App() {
   const [selectedIndex, setSelectedIndex] = useState(null);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [currentBattleId, setCurrentBattleId] = useState(null);
+  const [linesClearedInCard, setLinesClearedInCard] = useState([]);
 
   // 初回読み込み時にデータを復元
   useEffect(() => {
@@ -86,6 +96,9 @@ function App() {
       }
 
       try {
+        // 管理者権限チェック
+        const adminStatus = await checkAdminRole(currentUser.uid);
+        setIsAdmin(adminStatus);
         // Firestoreからデータを取得
         const progressData = await getUserProgress(currentUser.uid);
         
@@ -160,20 +173,60 @@ function App() {
       // ポイント更新（初回完了時のみ）
       if (isCompleted && !wasCompleted) {
         await updatePoints(currentUser.uid, 1 * level, level);
+        
+        // バトルポイント
+        if (currentBattleId) {
+          await addPoints(currentUser.uid, currentBattleId, 'EXERCISE_COMPLETE', 1, { level });
+        }
       }
 
-      // ビンゴ判定
-      if (checkBingo(newCompletedCells)) {
-        // ビンゴポイント
-        await updatePoints(currentUser.uid, 10 * level, level);
+      // 全マスクリアチェック
+      const allCompleted = newCompletedCells.every(cell => cell);
+      if (allCompleted) {
+        // 全マスクリアボーナス
+        if (currentBattleId) {
+          await addPoints(currentUser.uid, currentBattleId, 'FULL_CLEAR_BONUS', 1, { level });
+        }
         
         setTimeout(() => {
-          alert('ビンゴ！');
+          alert('全マスクリア！新しいカードに進みます！');
           // レベルアップと新しいカード生成
           setLevel(prevLevel => prevLevel + 1);
           setCardLayout(generateCardLayout());
           setCompletedCells(Array(9).fill(false));
+          setLinesClearedInCard([]);
         }, 100);
+      } else {
+        // ライン完成チェック
+        checkAndAwardLineCompletion(newCompletedCells);
+      }
+    }
+  };
+
+  // ライン完成チェックとポイント付与
+  const checkAndAwardLineCompletion = async (cells) => {
+    for (let i = 0; i < BINGO_PATTERNS.length; i++) {
+      const pattern = BINGO_PATTERNS[i];
+      const isLineComplete = pattern.every(index => cells[index]);
+      
+      if (isLineComplete && !linesClearedInCard.includes(i)) {
+        // 新しいライン完成
+        setLinesClearedInCard([...linesClearedInCard, i]);
+        
+        // 旧ポイントシステム
+        await updatePoints(currentUser.uid, 10 * level, level);
+        
+        // バトルポイント
+        if (currentBattleId) {
+          await addPoints(currentUser.uid, currentBattleId, 'LINE_CLEAR', 1, { level });
+        }
+        
+        // 最初のライン完成時のみ「ビンゴ！」表示
+        if (linesClearedInCard.length === 0) {
+          setTimeout(() => {
+            alert('ビンゴ！');
+          }, 100);
+        }
       }
     }
   };
@@ -224,13 +277,15 @@ function App() {
         {activeTab === 'weight' && <WeightPage />}
         {activeTab === 'group' && (
           <>
+            <BattleView />
             <GroupManager onGroupSelect={setSelectedGroup} />
             <GroupRanking group={selectedGroup} />
           </>
         )}
+        {activeTab === 'admin' && isAdmin && <AdminDashboard />}
       </main>
 
-      <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
+      <Navigation activeTab={activeTab} onTabChange={setActiveTab} isAdmin={isAdmin} />
 
       {selectedExercise && (
         <ExerciseModal

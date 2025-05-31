@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Navigation = ({ activeTab, onTabChange }) => {
+const Navigation = ({ activeTab, onTabChange, isAdmin }) => {
   return (
     <nav className="navigation">
       <button
@@ -24,6 +24,15 @@ const Navigation = ({ activeTab, onTabChange }) => {
         <span className="nav-icon">👥</span>
         <span className="nav-label">グループ</span>
       </button>
+      {isAdmin && (
+        <button
+          className={`nav-tab ${activeTab === 'admin' ? 'active' : ''}`}
+          onClick={() => onTabChange('admin')}
+        >
+          <span className="nav-icon">⚙️</span>
+          <span className="nav-label">管理</span>
+        </button>
+      )}
     </nav>
   );
 };
