@@ -48,7 +48,9 @@ const AuthEnhanced = ({ onAuthSuccess }) => {
 
   const loadRandomVideo = async () => {
     try {
+      console.log('動画切り替え開始...');
       const video = await getRandomVideoFromDB();
+      console.log('取得した動画:', video);
       setCurrentVideo(video);
     } catch (error) {
       console.error('動画読み込みエラー:', error);
@@ -58,7 +60,14 @@ const AuthEnhanced = ({ onAuthSuccess }) => {
         { videoId: "tmY9AO3SFKQ", title: "OKUNOSAMPEIトレーニング2" },
         { videoId: "a0xpRe0hdmc", title: "OKUNOSAMPEIトレーニング3" }
       ];
-      const randomFallback = fallbackVideos[Math.floor(Math.random() * fallbackVideos.length)];
+      
+      // 現在の動画と異なる動画を選択
+      let randomFallback;
+      do {
+        randomFallback = fallbackVideos[Math.floor(Math.random() * fallbackVideos.length)];
+      } while (currentVideo && randomFallback.videoId === currentVideo.videoId && fallbackVideos.length > 1);
+      
+      console.log('フォールバック動画を選択:', randomFallback);
       setCurrentVideo({
         title: randomFallback.title,
         videoId: randomFallback.videoId,

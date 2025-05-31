@@ -78,13 +78,18 @@ export const getVideosByCategory = async (category) => {
 };
 
 // ランダムな動画を取得
-export const getRandomVideoFromDB = async (category = null) => {
+export const getRandomVideoFromDB = async (category = null, excludeVideoId = null) => {
   try {
     let videos;
     if (category) {
       videos = await getVideosByCategory(category);
     } else {
       videos = await getAllVideos();
+    }
+    
+    // 現在の動画を除外
+    if (excludeVideoId && videos.length > 1) {
+      videos = videos.filter(v => v.videoId !== excludeVideoId);
     }
     
     if (videos.length === 0) {
@@ -94,9 +99,16 @@ export const getRandomVideoFromDB = async (category = null) => {
         { videoId: 'tmY9AO3SFKQ', title: 'OKUNOSAMPEIトレーニング2' },
         { videoId: 'a0xpRe0hdmc', title: 'OKUNOSAMPEIトレーニング3' }
       ];
-      const randomDefault = defaultVideos[Math.floor(Math.random() * defaultVideos.length)];
+      
+      // 現在の動画を除外
+      let availableVideos = defaultVideos;
+      if (excludeVideoId && defaultVideos.length > 1) {
+        availableVideos = defaultVideos.filter(v => v.videoId !== excludeVideoId);
+      }
+      
+      const randomDefault = availableVideos[Math.floor(Math.random() * availableVideos.length)];
       return {
-        id: 'default',
+        id: 'default_' + randomDefault.videoId,
         title: randomDefault.title,
         videoId: randomDefault.videoId,
         duration: '未設定',
@@ -108,7 +120,7 @@ export const getRandomVideoFromDB = async (category = null) => {
     return videos[randomIndex];
   } catch (error) {
     console.error('ランダム動画取得エラー:', error);
-    return null;
+    throw error; // nullではなくエラーをスロー
   }
 };
 
