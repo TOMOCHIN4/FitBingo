@@ -2,28 +2,29 @@ import React, { useState, useEffect } from 'react';
 import BingoCard from './components/BingoCard';
 import WeightPage from './components/WeightPage';
 import Navigation from './components/Navigation';
-import ExerciseModal from './components/ExerciseModal';
 import Auth from './components/Auth';
 import GroupManager from './components/GroupManager';
 import GroupRanking from './components/GroupRanking';
 import BattleView from './components/BattleView';
-import { exercises, calculateTargetValue } from './data/exercises';
+import PointsDisplay from './components/PointsDisplay';
+import BingoCelebration from './components/BingoCelebration';
+import { exercises } from './data/exercises';
 import { useAuth } from './contexts/AuthContext';
 import { 
   getUserProgress, 
-  saveUserProgress, 
-  updatePoints 
+  saveUserProgress 
 } from './firebase/firestore';
 import { 
   addPoints, 
-  checkAdminRole,
-  updateWeightAndCalculatePoints 
+  checkAdminRole
 } from './firebase/battleSystem';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from './firebase/config';
 import AdminDashboard from './components/AdminDashboard';
-import './App.css';
+import './App-vibrant.css';
 
-// LocalStorageのキー
-const STORAGE_KEY = 'fitbingo_data';
+// LocalStorageのキー（ユーザーIDを含める）
+const getStorageKey = (userId) => `fitbingo_data_${userId}`;
 
 // ビンゴパターン（3x3）
 const BINGO_PATTERNS = [
@@ -43,17 +44,12 @@ const generateCardLayout = () => {
   return shuffled;
 };
 
-// ビンゴ判定
-const checkBingo = (completedCells) => {
-  return BINGO_PATTERNS.some(pattern => 
-    pattern.every(index => completedCells[index])
-  );
-};
 
-// LocalStorageからデータを読み込み
-const loadFromLocalStorage = () => {
+// LocalStorageからデータを読み込み（ユーザーID付き）
+const loadFromLocalStorage = (userId) => {
+  if (!userId) return null;
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = localStorage.getItem(getStorageKey(userId));
     if (saved) {
       return JSON.parse(saved);
     }
@@ -63,14 +59,6 @@ const loadFromLocalStorage = () => {
   return null;
 };
 
-// LocalStorageにデータを保存
-const saveToLocalStorage = (data) => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  } catch (error) {
-    console.error('LocalStorage保存エラー:', error);
-  }
-};
 
 function App() {
   const { currentUser, logout } = useAuth();
@@ -78,14 +66,13 @@ function App() {
   const [cardLayout, setCardLayout] = useState([]);
   const [completedCells, setCompletedCells] = useState(Array(9).fill(false));
   const [activeTab, setActiveTab] = useState('bingo');
-  const [modalOpen, setModalOpen] = useState(false);
-  const [selectedExercise, setSelectedExercise] = useState(null);
-  const [selectedIndex, setSelectedIndex] = useState(null);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [currentBattleId, setCurrentBattleId] = useState(null);
   const [linesClearedInCard, setLinesClearedInCard] = useState([]);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [celebrationType, setCelebrationType] = useState('line');
 
   // 初回読み込み時にデータを復元
   useEffect(() => {
@@ -99,6 +86,22 @@ function App() {
         // 管理者権限チェック
         const adminStatus = await checkAdminRole(currentUser.uid);
         setIsAdmin(adminStatus);
+        
+        // アクティブなバトルを取得
+        try {
+          const battlesQuery = query(
+            collection(db, 'battles'),
+            where('status', '==', 'active'),
+            where('participants', 'array-contains', currentUser.uid)
+          );
+          const snapshot = await getDocs(battlesQuery);
+          
+          if (!snapshot.empty) {
+            setCurrentBattleId(snapshot.docs[0].id);
+          }
+        } catch (error) {
+          console.error('バトル取得エラー:', error);
+        }
         // Firestoreからデータを取得
         const progressData = await getUserProgress(currentUser.uid);
         
@@ -107,8 +110,8 @@ function App() {
           setCompletedCells(progressData.completedCells || Array(9).fill(false));
           setLevel(progressData.level || 1);
         } else {
-          // LocalStorageからデータを移行
-          const localData = loadFromLocalStorage();
+          // LocalStorageからデータを移行（ユーザーID付き）
+          const localData = loadFromLocalStorage(currentUser.uid);
           if (localData) {
             setLevel(localData.level || 1);
             setCardLayout(localData.cardLayout || generateCardLayout());
@@ -155,80 +158,76 @@ function App() {
   }, [level, cardLayout, completedCells, currentUser, loading]);
 
   // セルをクリックしたときの処理
-  const handleCellToggle = (index) => {
-    const exercise = cardLayout[index];
-    setSelectedExercise(exercise);
-    setSelectedIndex(index);
-    setModalOpen(true);
-  };
+  const handleCellToggle = async (index) => {
+    if (!currentUser) return;
+    
+    const newCompletedCells = [...completedCells];
+    const wasCompleted = completedCells[index];
+    
+    // 既に完了している場合は何もしない
+    if (wasCompleted) return;
+    
+    newCompletedCells[index] = true;
+    setCompletedCells(newCompletedCells);
 
-  // エクササイズ完了時の処理
-  const handleExerciseComplete = async (actualValue, isCompleted) => {
-    if (selectedIndex !== null && currentUser) {
-      const newCompletedCells = [...completedCells];
-      const wasCompleted = completedCells[selectedIndex];
-      newCompletedCells[selectedIndex] = isCompleted;
-      setCompletedCells(newCompletedCells);
-
-      // ポイント更新（初回完了時のみ）
-      if (isCompleted && !wasCompleted) {
-        await updatePoints(currentUser.uid, 1 * level, level);
-        
-        // バトルポイント
-        if (currentBattleId) {
-          await addPoints(currentUser.uid, currentBattleId, 'EXERCISE_COMPLETE', 1, { level });
-        }
-      }
-
-      // 全マスクリアチェック
-      const allCompleted = newCompletedCells.every(cell => cell);
-      if (allCompleted) {
-        // 全マスクリアボーナス
-        if (currentBattleId) {
-          await addPoints(currentUser.uid, currentBattleId, 'FULL_CLEAR_BONUS', 1, { level });
-        }
-        
-        setTimeout(() => {
-          alert('全マスクリア！新しいカードに進みます！');
-          // レベルアップと新しいカード生成
-          setLevel(prevLevel => prevLevel + 1);
-          setCardLayout(generateCardLayout());
-          setCompletedCells(Array(9).fill(false));
-          setLinesClearedInCard([]);
-        }, 100);
-      } else {
-        // ライン完成チェック
-        checkAndAwardLineCompletion(newCompletedCells);
-      }
+    // マス完了ポイント（バトル中のみ）
+    if (currentBattleId) {
+      await addPoints(currentUser.uid, 'exercise', { level }, currentBattleId);
     }
-  };
-
-  // ライン完成チェックとポイント付与
-  const checkAndAwardLineCompletion = async (cells) => {
-    for (let i = 0; i < BINGO_PATTERNS.length; i++) {
-      const pattern = BINGO_PATTERNS[i];
-      const isLineComplete = pattern.every(index => cells[index]);
+    
+    // ライン完成チェック
+    const completedLines = checkCompletedLines(newCompletedCells);
+    const newLines = completedLines.filter(line => !linesClearedInCard.includes(line));
+    
+    if (newLines.length > 0) {
+      // 新しいライン完成ポイント（バトル中のみ）
+      if (currentBattleId) {
+        for (let i = 0; i < newLines.length; i++) {
+          await addPoints(currentUser.uid, 'line', { level }, currentBattleId);
+        }
+      }
+      setLinesClearedInCard([...linesClearedInCard, ...newLines]);
       
-      if (isLineComplete && !linesClearedInCard.includes(i)) {
-        // 新しいライン完成
-        setLinesClearedInCard([...linesClearedInCard, i]);
-        
-        // 旧ポイントシステム
-        await updatePoints(currentUser.uid, 10 * level, level);
-        
-        // バトルポイント
-        if (currentBattleId) {
-          await addPoints(currentUser.uid, currentBattleId, 'LINE_CLEAR', 1, { level });
-        }
-        
-        // 最初のライン完成時のみ「ビンゴ！」表示
-        if (linesClearedInCard.length === 0) {
-          setTimeout(() => {
-            alert('ビンゴ！');
-          }, 100);
-        }
-      }
+      // BINGO祝福アニメーション表示
+      setCelebrationType('line');
+      setShowCelebration(true);
+      console.log('ライン完成アニメーション表示');
     }
+    
+    // 全マスクリアチェック
+    if (newCompletedCells.every(cell => cell)) {
+      // 全マスクリアポイント（バトル中のみ）
+      if (currentBattleId) {
+        await addPoints(currentUser.uid, 'allClear', { level }, currentBattleId);
+      }
+      
+      // ALL CLEAR祝福アニメーション表示
+      setCelebrationType('allClear');
+      setShowCelebration(true);
+      console.log('全マスクリアアニメーション表示');
+      
+      // 少し遅延してカード更新（アニメーションを見せるため）
+      setTimeout(() => {
+        setShowCelebration(false);
+        const newLayout = generateCardLayout();
+        setCardLayout(newLayout);
+        setCompletedCells(Array(9).fill(false));
+        setLevel(level + 1);
+        setLinesClearedInCard([]);
+        console.log('新しいカード生成完了');
+      }, 3000);
+    }
+  };
+
+  // ライン完成チェック用の関数
+  const checkCompletedLines = (cells) => {
+    const completedLines = [];
+    BINGO_PATTERNS.forEach((pattern, index) => {
+      if (pattern.every(cellIndex => cells[cellIndex])) {
+        completedLines.push(index);
+      }
+    });
+    return completedLines;
   };
 
   // 未認証の場合
@@ -252,15 +251,23 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>FitBingo</h1>
+        <div className="header-top">
+          <h1 className="app-title">💪 FitBingo 🔥</h1>
+          <button onClick={logout} className="logout-button">
+            ログアウト
+          </button>
+        </div>
+        
         {activeTab === 'bingo' && (
-          <div className="level-display">
-            レベル {level}
+          <div className="header-stats">
+            <div className="level-display">
+              <span className="level-emoji">⭐</span>
+              <span className="level-text">LEVEL</span>
+              <span className="level-number">{level}</span>
+            </div>
+            <PointsDisplay userId={currentUser?.uid} battleId={currentBattleId} />
           </div>
         )}
-        <button onClick={logout} className="logout-button">
-          ログアウト
-        </button>
       </header>
       
       <main className="app-main">
@@ -286,16 +293,12 @@ function App() {
       </main>
 
       <Navigation activeTab={activeTab} onTabChange={setActiveTab} isAdmin={isAdmin} />
-
-      {selectedExercise && (
-        <ExerciseModal
-          isOpen={modalOpen}
-          onClose={() => setModalOpen(false)}
-          exercise={selectedExercise}
-          targetValue={calculateTargetValue(selectedExercise.baseValue, level)}
-          onComplete={handleExerciseComplete}
-        />
-      )}
+      
+      <BingoCelebration 
+        isVisible={showCelebration}
+        onClose={() => setShowCelebration(false)}
+        type={celebrationType}
+      />
     </div>
   );
 }
