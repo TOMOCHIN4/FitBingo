@@ -39,17 +39,22 @@ export const addTrainingVideo = async (videoData, userId) => {
 // すべての動画を取得
 export const getAllVideos = async () => {
   try {
-    const q = query(
-      collection(db, 'trainingVideos'),
-      where('active', '==', true),
-      orderBy('createdAt', 'desc')
-    );
-    
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({
+    // シンプルなクエリで取得してからフィルタリング
+    const snapshot = await getDocs(collection(db, 'trainingVideos'));
+    const allVideos = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     }));
+    
+    // アクティブな動画のみフィルタリング
+    const activeVideos = allVideos.filter(video => video.active !== false);
+    
+    // 作成日順でソート
+    return activeVideos.sort((a, b) => {
+      const aDate = a.createdAt?.toDate?.() || new Date(0);
+      const bDate = b.createdAt?.toDate?.() || new Date(0);
+      return bDate - aDate;
+    });
   } catch (error) {
     console.error('動画取得エラー:', error);
     return [];
@@ -59,18 +64,24 @@ export const getAllVideos = async () => {
 // カテゴリー別に動画を取得
 export const getVideosByCategory = async (category) => {
   try {
-    const q = query(
-      collection(db, 'trainingVideos'),
-      where('active', '==', true),
-      where('category', '==', category),
-      orderBy('createdAt', 'desc')
-    );
-    
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({
+    // シンプルなクエリで取得してからフィルタリング
+    const snapshot = await getDocs(collection(db, 'trainingVideos'));
+    const allVideos = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     }));
+    
+    // アクティブかつカテゴリーが一致する動画のみフィルタリング
+    const categoryVideos = allVideos.filter(video => 
+      video.active !== false && video.category === category
+    );
+    
+    // 作成日順でソート
+    return categoryVideos.sort((a, b) => {
+      const aDate = a.createdAt?.toDate?.() || new Date(0);
+      const bDate = b.createdAt?.toDate?.() || new Date(0);
+      return bDate - aDate;
+    });
   } catch (error) {
     console.error('カテゴリー別動画取得エラー:', error);
     return [];
