@@ -165,6 +165,7 @@ userProgress/
 - 2025/05/31: セキュリティ改善とコード品質向上
 - 2025/05/31: 一人モード/大会モードとオープン大会システム実装
 - 2025/05/31: 豪華なログイン画面とYouTube動画背景実装
+- 2025/06/01: 本番環境デバッグ（Firebaseインデックスエラー修正、UI問題解決）
 
 ## セキュリティ改善 (2025/05/31 実装)
 ### 実装内容
@@ -255,3 +256,30 @@ VITE_FIREBASE_APP_ID=xxx
 - `VideoManager.jsx/css`: 動画管理コンポーネント
 - `trainingVideos.js`: 動画リストデータ
 - `videoManagement.js`: Firebase動画管理システム
+
+## 本番環境デバッグと修正 (2025/06/01 実装)
+### 対応した問題
+1. **Firebaseインデックスエラー**
+   - 複合クエリによるインデックス要求エラーを解消
+   - 大会クエリと動画クエリを単純化
+   - クライアント側でのフィルタリングに変更
+
+2. **動画切り替えボタンのクリック問題**
+   - CSSのz-indexとpointer-eventsの競合を修正
+   - 背景要素のpointer-events: noneとボタンのpointer-events: autoを適切に設定
+
+3. **フォーム警告対応**
+   - パスワードフィールドにautocomplete属性を追加
+   - メールフィールドにもautocomplete="email"を設定
+
+### 技術的改善
+- Firebaseクエリの最適化
+  - `where` + `orderBy`の複合クエリを避ける
+  - `getDocs`で全データ取得後にJavaScript側でフィルタリング
+  - インデックス作成不要で本番環境でも即座に動作
+
+### 修正ファイル
+- `tournamentSystem.js`: getActiveTournaments、getRecentWinnersのクエリ簡素化
+- `videoManagement.js`: getAllVideos、getVideosByCategoryのクエリ簡素化
+- `AuthEnhanced.css`: 動画切り替えボタンのCSS修正
+- `AuthEnhanced.jsx`: autocomplete属性の追加

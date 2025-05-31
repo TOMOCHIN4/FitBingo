@@ -266,4 +266,73 @@ git push https://[USERNAME]:[TOKEN]@github.com/[USERNAME]/[REPO].git main
 
 ---
 
-更新日: 2025年5月31日
+## 2025年6月1日 - 本番環境デバッグセッション
+
+### セッション概要
+- **開発者**: TOMOCHIN4
+- **アシスタント**: Claude
+- **開発内容**: 本番環境でのFirebaseエラー修正とUI問題解決
+- **作業時間**: 約45分
+
+### 実施内容
+
+#### 1. 本番環境デプロイ
+- **Vercel環境変数設定**
+  - Firebase設定の環境変数を本番環境に設定
+  - 自動デプロイの確認
+  - 本番URL: https://fit-bingo-weld.vercel.app/
+
+#### 2. Firebase インデックスエラーの修正
+- **問題**: 複合クエリによるインデックス要求エラー
+- **解決方法**:
+  - `where` + `orderBy`の複合クエリを単純化
+  - 全データ取得後にクライアント側でフィルタリング
+  - インデックス作成不要でコスト削減
+
+- **修正対象**:
+  - `getActiveTournaments()`: 大会一覧取得
+  - `getRecentWinners()`: 優勝者取得
+  - `getAllVideos()`: 動画一覧取得
+  - `getVideosByCategory()`: カテゴリー別動画取得
+
+#### 3. UI操作問題の修正
+- **動画切り替えボタンがクリックできない問題**
+  - 原因: CSS z-indexとpointer-eventsの競合
+  - 解決:
+    - 背景要素に`pointer-events: none`
+    - ボタンに`pointer-events: auto`と高いz-index設定
+
+#### 4. フォーム警告への対応
+- **autocomplete属性の追加**
+  - メールフィールド: `autocomplete="email"`
+  - パスワードフィールド: 
+    - ログイン時: `autocomplete="current-password"`
+    - 新規登録時: `autocomplete="new-password"`
+
+### 技術的な改善点
+1. **Firebaseクエリ最適化**
+   - 複雑なクエリを避けて単純な取得に変更
+   - JavaScriptでのフィルタリング・ソート
+   - 本番環境での即座の動作を実現
+
+2. **CSS設計の改善**
+   - z-indexとpointer-eventsの適切な管理
+   - インタラクティブ要素の確実な操作性
+
+3. **セキュリティとUXの向上**
+   - フォームのautocomplete属性で適切な入力支援
+   - ブラウザの警告解消
+
+### 解決した課題
+1. **本番環境でのFirebaseエラー**: 全て解消
+2. **UI操作の不具合**: 動画切り替えボタンが正常動作
+3. **ブラウザ警告**: autocomplete属性追加で解消
+
+### 今後の考慮事項
+- サードパーティCookie警告は将来的な課題
+- 現時点では動作に影響なし
+- Chromeの仕様変更に注意が必要
+
+---
+
+更新日: 2025年6月1日
