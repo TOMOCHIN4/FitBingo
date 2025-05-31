@@ -212,6 +212,7 @@ const AuthEnhanced = ({ onAuthSuccess }) => {
                     required
                     placeholder="example@email.com"
                     className="input-enhanced"
+                    autoComplete="email"
                   />
                 </div>
 
@@ -226,6 +227,7 @@ const AuthEnhanced = ({ onAuthSuccess }) => {
                     placeholder="6文字以上"
                     minLength={6}
                     className="input-enhanced"
+                    autoComplete={isLogin ? "current-password" : "new-password"}
                   />
                 </div>
 
