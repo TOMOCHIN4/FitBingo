@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { checkAdminRole, createBattle, performWeeklyAward, finalizeBattle } from '../firebase/battleSystem';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { collection, query, getDocs, orderBy } from 'firebase/firestore';
 import { db } from '../firebase/config';
 
 const AdminDashboard = () => {
@@ -94,7 +94,7 @@ const AdminDashboard = () => {
     if (!window.confirm('このバトルを終了しますか？')) return;
     
     try {
-      const finalRanking = await finalizeBattle(battleId);
+      await finalizeBattle(battleId);
       alert('バトルを終了しました！');
       await loadBattles();
     } catch (error) {

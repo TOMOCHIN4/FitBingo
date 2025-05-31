@@ -187,7 +187,6 @@ export const updateWeightAndCalculatePoints = async (userId, battleId, newWeight
     
     // 体重変化計算
     const weightLoss = previousWeight - newWeight;
-    const totalWeightLoss = initialWeight - newWeight;
     
     let pointsEarned = 0;
     

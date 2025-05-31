@@ -21,11 +21,10 @@ const BattleView = () => {
   const [myBattles, setMyBattles] = useState([]);
   const [battleScores, setBattleScores] = useState({});
   const [loading, setLoading] = useState(true);
-  const [selectedBattle, setSelectedBattle] = useState(null);
 
   useEffect(() => {
     loadBattles();
-  }, [currentUser]);
+  }, [currentUser]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadBattles = async () => {
     if (!currentUser) return;

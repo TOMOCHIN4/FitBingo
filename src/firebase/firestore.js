@@ -9,10 +9,7 @@ import {
   getDocs,
   onSnapshot,
   arrayUnion,
-  arrayRemove,
-  serverTimestamp,
-  orderBy,
-  limit
+  serverTimestamp
 } from 'firebase/firestore';
 import { db } from './config';
 
@@ -174,7 +171,7 @@ export const subscribeToGroupRanking = (groupId, callback) => {
 };
 
 // ポイントを更新（マス完了・ビンゴ達成時）
-export const updatePoints = async (userId, pointsToAdd, level) => {
+export const updatePoints = async (userId, pointsToAdd) => {
   try {
     const userProgressRef = doc(db, 'userProgress', userId);
     const currentData = await getDoc(userProgressRef);

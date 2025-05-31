@@ -162,3 +162,33 @@ userProgress/
 ## 更新履歴
 - 2025/05/30: フェーズ1〜3完了、本番環境デプロイ
 - 2025/05/30: 管理者機能とバトルシステム実装
+- 2025/05/31: セキュリティ改善とコード品質向上
+
+## セキュリティ改善 (2025/05/31 実装)
+### 実装内容
+- Firebase設定の環境変数化
+  - `.env.local`ファイルでFirebase設定を管理
+  - `import.meta.env`を使用した環境変数の読み込み
+  - ハードコードされた機密情報の除去
+  
+- コード品質の向上
+  - ESLintエラー16個を全て修正
+  - 未使用変数・関数の削除
+  - 未使用インポートの整理
+  - React Hooks依存関係の警告を解決
+
+### 環境変数設定
+```bash
+# .env.local に以下を設定
+VITE_FIREBASE_API_KEY=xxx
+VITE_FIREBASE_AUTH_DOMAIN=xxx
+VITE_FIREBASE_PROJECT_ID=xxx
+VITE_FIREBASE_STORAGE_BUCKET=xxx
+VITE_FIREBASE_MESSAGING_SENDER_ID=xxx
+VITE_FIREBASE_APP_ID=xxx
+```
+
+### 削除された未使用コード
+- `App.jsx`: `checkBingo`関数、`saveToLocalStorage`関数
+- `firestore.js`: `arrayRemove`、`orderBy`、`limit`インポート
+- 各コンポーネントの未使用state変数
