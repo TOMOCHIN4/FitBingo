@@ -175,17 +175,25 @@ export const addTournamentPoints = async (tournamentId, userId, type, metadata =
 // 募集中・開催中の大会を取得
 export const getActiveTournaments = async () => {
   try {
-    const q = query(
-      collection(db, 'tournaments'),
-      where('status', 'in', [TOURNAMENT_STATUS.RECRUITING, TOURNAMENT_STATUS.ACTIVE]),
-      orderBy('createdAt', 'desc')
-    );
-    
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({
+    // シンプルなクエリで取得してからフィルタリング
+    const snapshot = await getDocs(collection(db, 'tournaments'));
+    const allTournaments = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     }));
+    
+    // ステータスでフィルタリング
+    const activeTournaments = allTournaments.filter(
+      tournament => tournament.status === TOURNAMENT_STATUS.RECRUITING || 
+                   tournament.status === TOURNAMENT_STATUS.ACTIVE
+    );
+    
+    // 作成日順でソート
+    return activeTournaments.sort((a, b) => {
+      const aDate = a.createdAt?.toDate?.() || new Date(0);
+      const bDate = b.createdAt?.toDate?.() || new Date(0);
+      return bDate - aDate;
+    });
   } catch (error) {
     console.error('アクティブな大会取得エラー:', error);
     return [];
@@ -198,23 +206,35 @@ export const getRecentWinners = async () => {
     const threeDaysAgo = new Date();
     threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
     
-    const q = query(
-      collection(db, 'tournaments'),
-      where('status', '==', TOURNAMENT_STATUS.FINISHED),
-      where('endDate', '>=', threeDaysAgo),
-      orderBy('endDate', 'desc'),
-      limit(5)
-    );
-    
-    const snapshot = await getDocs(q);
-    const tournaments = snapshot.docs.map(doc => ({
+    // シンプルなクエリで取得してからフィルタリング
+    const snapshot = await getDocs(collection(db, 'tournaments'));
+    const allTournaments = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     }));
     
+    // 終了した大会を3日以内でフィルタリング
+    const recentFinishedTournaments = allTournaments.filter(tournament => {
+      if (tournament.status !== TOURNAMENT_STATUS.FINISHED) return false;
+      
+      const endDate = tournament.endDate?.toDate?.() || tournament.endDate;
+      if (!endDate) return false;
+      
+      return new Date(endDate) >= threeDaysAgo;
+    });
+    
+    // 終了日順でソート（最新5件）
+    const sortedTournaments = recentFinishedTournaments
+      .sort((a, b) => {
+        const aDate = a.endDate?.toDate?.() || new Date(a.endDate);
+        const bDate = b.endDate?.toDate?.() || new Date(b.endDate);
+        return bDate - aDate;
+      })
+      .slice(0, 5);
+    
     // 各大会の優勝者を取得
     const winners = [];
-    for (const tournament of tournaments) {
+    for (const tournament of sortedTournaments) {
       const winner = await getTournamentWinner(tournament.id);
       if (winner) {
         winners.push({
@@ -279,34 +299,37 @@ export const updateTournamentStatus = async () => {
   try {
     const now = new Date();
     
-    // 募集中 → 開催中
-    const recruitingQuery = query(
-      collection(db, 'tournaments'),
-      where('status', '==', TOURNAMENT_STATUS.RECRUITING),
-      where('startDate', '<=', now)
-    );
+    // 全ての大会を取得
+    const snapshot = await getDocs(collection(db, 'tournaments'));
     
-    const recruitingSnapshot = await getDocs(recruitingQuery);
-    for (const doc of recruitingSnapshot.docs) {
-      await updateDoc(doc.ref, {
-        status: TOURNAMENT_STATUS.ACTIVE,
-        updatedAt: serverTimestamp()
-      });
-    }
-    
-    // 開催中 → 終了
-    const activeQuery = query(
-      collection(db, 'tournaments'),
-      where('status', '==', TOURNAMENT_STATUS.ACTIVE),
-      where('endDate', '<=', now)
-    );
-    
-    const activeSnapshot = await getDocs(activeQuery);
-    for (const doc of activeSnapshot.docs) {
-      await updateDoc(doc.ref, {
-        status: TOURNAMENT_STATUS.FINISHED,
-        updatedAt: serverTimestamp()
-      });
+    for (const doc of snapshot.docs) {
+      const tournament = doc.data();
+      const startDate = tournament.startDate?.toDate?.() || tournament.startDate;
+      const endDate = tournament.endDate?.toDate?.() || tournament.endDate;
+      
+      let shouldUpdate = false;
+      let newStatus = tournament.status;
+      
+      // 募集中 → 開催中
+      if (tournament.status === TOURNAMENT_STATUS.RECRUITING && 
+          startDate && new Date(startDate) <= now) {
+        newStatus = TOURNAMENT_STATUS.ACTIVE;
+        shouldUpdate = true;
+      }
+      // 開催中 → 終了
+      else if (tournament.status === TOURNAMENT_STATUS.ACTIVE && 
+               endDate && new Date(endDate) <= now) {
+        newStatus = TOURNAMENT_STATUS.FINISHED;
+        shouldUpdate = true;
+      }
+      
+      if (shouldUpdate) {
+        await updateDoc(doc.ref, {
+          status: newStatus,
+          updatedAt: serverTimestamp()
+        });
+        console.log(`大会 ${doc.id} のステータスを ${newStatus} に更新`);
+      }
     }
     
     console.log('大会ステータス更新完了');
